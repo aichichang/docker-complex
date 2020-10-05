@@ -1,0 +1,32 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  # -t tage the name with Docker id/tag, 
+  # -f to specify the rout for the Dockerfile.dev, 
+  # and as we have a nested folder, we want it to look into ./client to look for the build file
+  - docker build -t aichichangnandos/react-test -f ./client/Dockerfile.dev ./client
+  # if we need to build and run test for another project, we can run - docker build........
+
+script:
+  - docker run -e CI=true aichichangnandos/react-test npm test
+  # and - docker run another prject's test file
+
+after_success:
+  # this time we don't need to specify with the -f cause docker will look for the 'Dockerfile' automatically
+  - docker build -t aichichangnandos/multi-client ./client
+  - docker build -t aichichangnandos/multi-nginx ./nginx
+  - docker build -t aichichangnandos/multi-server ./server
+  - docker build -t aichichangnandos/multi-worker ./worker
+  # log in to the docker CLI
+  # we do the login in one command
+  # Echo the password and stand in to the login, when docker login, it will take the id from DOCKER_ID and the stand in password
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # take those images and push them to docker hub
+  - docker push aichichangnandos/multi-client
+  - docker push aichichangnandos/multi-nginx
+  - docker push aichichangnandos/multi-server
+  - docker push aichichangnandos/multi-worker
